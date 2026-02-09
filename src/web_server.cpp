@@ -147,8 +147,8 @@ button{padding:10px 20px;border:none;border-radius:4px;cursor:pointer;font-size:
 .btn-primary:hover{background:#00cccc}
 .btn-danger{background:#f44;color:#fff;margin-top:8px}
 .btn-danger:hover{background:#d33}
-.btn-warn{background:#fda0;color:#0a0e1a;margin-top:8px}
-.btn-warn:hover{background:#fc8}
+.btn-warn{background:#ffaa00;color:#0a0e1a;margin-top:8px}
+.btn-warn:hover{background:#ffcc88}
 .btn-group{display:flex;gap:8px;margin-top:12px}
 .btn-group button{flex:1}
 .status{display:flex;gap:16px;flex-wrap:wrap}
@@ -156,7 +156,7 @@ button{padding:10px 20px;border:none;border-radius:4px;cursor:pointer;font-size:
 .status .val{font-size:1.3em;font-weight:bold;color:#04ffff}
 .status .lbl{font-size:0.75em;color:#888}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
-.green{background:#0f0}.red{background:#f00}.orange{background:#fda0}
+.green{background:#0f0}.red{background:#f00}.orange{background:#ffaa00}
 .alert{background:#1a3a1a;border:1px solid #0f0;border-radius:4px;padding:10px;margin-bottom:16px;color:#0f0;text-align:center}
 .scan-btn{background:#2a2f3e;color:#04ffff;padding:6px 12px;font-size:0.8em;margin-bottom:8px}
 #networks{margin-bottom:12px}
