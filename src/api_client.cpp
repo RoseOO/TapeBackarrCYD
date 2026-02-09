@@ -1,0 +1,161 @@
+#include "api_client.h"
+#include <WiFi.h>
+
+void APIClient::begin(SettingsManager& settings) {
+    _settings = &settings;
+}
+
+String APIClient::buildURL(const String& path) {
+    String protocol = _settings->get().useHTTPS ? "https" : "http";
+    return protocol + "://" + _settings->get().serverHost + ":" +
+           String(_settings->get().serverPort) + path;
+}
+
+String APIClient::httpGet(const String& url) {
+    HTTPClient http;
+    http.begin(url);
+    http.addHeader("X-API-Key", _settings->get().apiKey);
+    http.addHeader("Accept", "application/json");
+    http.setTimeout(10000);
+
+    int httpCode = http.GET();
+    String payload;
+
+    if (httpCode == HTTP_CODE_OK) {
+        payload = http.getString();
+        _connected = true;
+        _lastError = "";
+    } else if (httpCode > 0) {
+        _lastError = "HTTP " + String(httpCode);
+        _connected = false;
+    } else {
+        _lastError = http.errorToString(httpCode);
+        _connected = false;
+    }
+
+    http.end();
+    return payload;
+}
+
+bool APIClient::testConnection() {
+    String url = buildURL("/api/v1/health");
+    String resp = httpGet(url);
+    return _connected;
+}
+
+DashboardData APIClient::fetchDashboard() {
+    DashboardData data = {};
+    data.valid = false;
+
+    String url = buildURL("/api/v1/dashboard");
+    String resp = httpGet(url);
+    if (resp.isEmpty()) return data;
+
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, resp);
+    if (err) {
+        _lastError = "JSON: " + String(err.c_str());
+        return data;
+    }
+
+    data.totalTapes        = doc["total_tapes"] | 0;
+    data.activeTapes       = doc["active_tapes"] | 0;
+    data.fullTapes         = doc["full_tapes"] | 0;
+    data.totalJobs         = doc["total_jobs"] | 0;
+    data.activeJobs        = doc["active_jobs"] | 0;
+    data.totalDrives       = doc["total_drives"] | 0;
+    data.totalCapacityBytes = doc["total_capacity_bytes"] | (int64_t)0;
+    data.usedCapacityBytes  = doc["used_capacity_bytes"] | (int64_t)0;
+    data.valid = true;
+
+    return data;
+}
+
+std::vector<ActiveJobData> APIClient::fetchActiveJobs() {
+    std::vector<ActiveJobData> jobs;
+
+    String url = buildURL("/api/v1/jobs/active");
+    String resp = httpGet(url);
+    if (resp.isEmpty()) return jobs;
+
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, resp);
+    if (err) {
+        _lastError = "JSON: " + String(err.c_str());
+        return jobs;
+    }
+
+    JsonArray arr = doc.as<JsonArray>();
+    for (JsonObject obj : arr) {
+        ActiveJobData job;
+        job.id             = obj["id"] | 0;
+        job.name           = obj["name"] | "Unknown";
+        job.status         = obj["status"] | "unknown";
+        job.filesProcessed = obj["files_processed"] | (int64_t)0;
+        job.bytesProcessed = obj["bytes_processed"] | (int64_t)0;
+        job.startTime      = obj["start_time"] | "";
+        job.valid = true;
+        jobs.push_back(job);
+    }
+
+    return jobs;
+}
+
+std::vector<DriveData> APIClient::fetchDrives() {
+    std::vector<DriveData> drives;
+
+    String url = buildURL("/api/v1/drives");
+    String resp = httpGet(url);
+    if (resp.isEmpty()) return drives;
+
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, resp);
+    if (err) {
+        _lastError = "JSON: " + String(err.c_str());
+        return drives;
+    }
+
+    JsonArray arr = doc.as<JsonArray>();
+    for (JsonObject obj : arr) {
+        DriveData drive;
+        drive.id          = obj["id"] | 0;
+        drive.displayName = obj["display_name"] | "Unknown";
+        drive.status      = obj["status"] | "unknown";
+        drive.currentTape = obj["current_tape"] | "None";
+        drive.devicePath  = obj["device_path"] | "";
+        drive.enabled     = obj["enabled"] | false;
+        drive.valid = true;
+        drives.push_back(drive);
+    }
+
+    return drives;
+}
+
+std::vector<TapeChangeData> APIClient::fetchTapeChanges() {
+    std::vector<TapeChangeData> changes;
+
+    // Fetch active jobs and check for tape change needs via events
+    String url = buildURL("/api/v1/events");
+    String resp = httpGet(url);
+    if (resp.isEmpty()) return changes;
+
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, resp);
+    if (err) return changes;
+
+    JsonArray arr = doc.as<JsonArray>();
+    for (JsonObject obj : arr) {
+        String type = obj["type"] | "";
+        if (type == "tape_change_required" || type == "tape_full") {
+            TapeChangeData change;
+            change.id            = obj["id"] | 0;
+            change.reason        = obj["type"] | "";
+            change.status        = obj["status"] | "pending";
+            change.currentTapeId = obj["tape_id"] | 0;
+            change.valid = true;
+            changes.push_back(change);
+        }
+    }
+
+    return changes;
+}
