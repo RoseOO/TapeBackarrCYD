@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <WebServer.h>
+#include <DNSServer.h>
 #include "settings.h"
 #include "wifi_manager.h"
 #include "api_client.h"
@@ -14,6 +15,7 @@ public:
 
 private:
     WebServer _server{80};
+    DNSServer _dns;
     SettingsManager* _settings = nullptr;
     WiFiManager* _wifi = nullptr;
     APIClient* _api = nullptr;
@@ -25,6 +27,5 @@ private:
     void handleReset();
     void handleScan();
 
-    String buildPage();
     String htmlEscape(const String& str);
 };

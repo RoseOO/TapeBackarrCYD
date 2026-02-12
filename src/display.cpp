@@ -1,11 +1,7 @@
 #include "display.h"
 
-// XPT2046 touch pins for CYD (separate SPI bus)
-#define XPT2046_IRQ  36
-#define XPT2046_MOSI 32
-#define XPT2046_MISO 39
-#define XPT2046_CLK  25
-#define XPT2046_CS   33
+// Backlight pin
+#define TFT_BL 21
 
 // Screen dimensions
 #define SCREEN_W 320
@@ -33,10 +29,6 @@ void Display::begin() {
     pinMode(LED_GREEN, OUTPUT);
     pinMode(LED_BLUE, OUTPUT);
     setLED(false, false, false);
-
-    // Touch calibration will use TFT_eSPI built-in
-    uint16_t calData[5] = {239, 3587, 268, 3580, 7};
-    _tft.setTouch(calData);
 }
 
 void Display::update() {
@@ -58,7 +50,6 @@ void Display::showBoot(const String& version) {
     _tft.setTextDatum(MC_DATUM);
 
     _tft.setTextSize(1);
-    _tft.setFreeFont(nullptr);
     _tft.drawString("TAPEBACKARR", SCREEN_W / 2, 80, 4);
 
     _tft.setTextColor(COLOR_TEXT_DIM, COLOR_BG);
@@ -368,12 +359,16 @@ void Display::setBrightness(uint8_t pct) {
 }
 
 bool Display::isTouched() {
-    uint16_t x, y;
-    return _tft.getTouch(&x, &y);
+    lgfx::touch_point_t tp;
+    return _tft.getTouch(&tp, 1) > 0;
 }
 
 void Display::getTouchPoint(uint16_t& x, uint16_t& y) {
-    _tft.getTouch(&x, &y);
+    lgfx::touch_point_t tp;
+    if (_tft.getTouch(&tp, 1) > 0) {
+        x = tp.x;
+        y = tp.y;
+    }
 }
 
 int Display::getTabFromTouch(uint16_t x, uint16_t y) {

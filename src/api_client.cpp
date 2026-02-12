@@ -16,7 +16,7 @@ String APIClient::httpGet(const String& url) {
     http.begin(url);
     http.addHeader("X-API-Key", _settings->get().apiKey);
     http.addHeader("Accept", "application/json");
-    http.setTimeout(10000);
+    http.setTimeout(3000);
 
     int httpCode = http.GET();
     String payload;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include <TFT_eSPI.h>
+#include "LGFX_Config.h"
 #include "api_client.h"
 #include "wifi_manager.h"
 
@@ -67,7 +67,7 @@ public:
     void alertLED(bool on);
 
 private:
-    TFT_eSPI _tft = TFT_eSPI();
+    LGFX _tft;
     DisplayScreen _currentScreen = SCREEN_BOOT;
     unsigned long _lastAlertBlink = 0;
     bool _alertState = false;

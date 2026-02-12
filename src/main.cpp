@@ -55,8 +55,11 @@ void fetchAllData() {
     if (!wifiMgr.isConnected() || !settings.isConfigured()) return;
 
     dashboardData = apiClient.fetchDashboard();
+    webServer.handleClient();
     activeJobs    = apiClient.fetchActiveJobs();
+    webServer.handleClient();
     drives        = apiClient.fetchDrives();
+    webServer.handleClient();
     tapeChanges   = apiClient.fetchTapeChanges();
 
     // Check for tape change alerts

@@ -61,7 +61,8 @@ void WiFiManager::startSTA() {
     }
 
     WiFi.disconnect(true);
-    WiFi.mode(WIFI_STA);
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.softAP(_apName.c_str());
     WiFi.begin(_settings->get().wifiSSID.c_str(),
                _settings->get().wifiPassword.c_str());
     _state = WIFI_STATE_CONNECTING;
