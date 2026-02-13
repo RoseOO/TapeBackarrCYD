@@ -7,11 +7,13 @@
  * Features:
  *   - Real-time dashboard with tape/job/drive statistics
  *   - Active job monitoring with progress
- *   - Drive status display with loaded tape info
+ *   - Drive status display with loaded tape info and format type
+ *   - LTFS format progress monitoring
  *   - Tape change alerts with LED notification
  *   - Touch-based screen navigation
  *   - Web-based configuration interface
  *   - WiFi AP fallback for initial setup
+ *   - CYD IP address shown on connection error screens
  *
  * Hardware: ESP32-2432S028 (CYD2USB variant with USB-C)
  *           2.8" 320x240 ILI9341 TFT + XPT2046 touch
@@ -27,7 +29,7 @@
 #include "display.h"
 #include "web_server.h"
 
-#define FW_VERSION "1.0.0"
+#define FW_VERSION "1.1.0"
 
 // Global instances
 SettingsManager settings;
@@ -48,6 +50,7 @@ DashboardData              dashboardData = {};
 std::vector<ActiveJobData> activeJobs;
 std::vector<DriveData>     drives;
 std::vector<TapeChangeData> tapeChanges;
+LTFSFormatStatus           ltfsFormatStatus = {};
 
 #define TOUCH_DEBOUNCE 300  // ms
 
@@ -61,6 +64,8 @@ void fetchAllData() {
     drives        = apiClient.fetchDrives();
     webServer.handleClient();
     tapeChanges   = apiClient.fetchTapeChanges();
+    webServer.handleClient();
+    ltfsFormatStatus = apiClient.fetchLTFSFormatStatus();
 
     // Check for tape change alerts
     hasAlert = !tapeChanges.empty();
@@ -70,6 +75,12 @@ void refreshDisplay() {
     if (hasAlert) {
         String reason = tapeChanges.empty() ? "Tape change needed" : tapeChanges[0].reason;
         display.showTapeAlert(reason);
+        return;
+    }
+
+    // Show LTFS format progress if a format operation is active
+    if (ltfsFormatStatus.valid && ltfsFormatStatus.active) {
+        display.showLTFSFormat(ltfsFormatStatus);
         return;
     }
 
@@ -183,7 +194,7 @@ void loop() {
             fetchAllData();
             refreshDisplay();
         } else {
-            display.showError("Not configured - open web UI");
+            display.showError("Not configured - open web UI", wifiMgr.getIP());
         }
     }
 
@@ -195,7 +206,7 @@ void loop() {
         fetchAllData();
 
         if (!apiClient.isConnected()) {
-            display.showError(apiClient.getLastError());
+            display.showError(apiClient.getLastError(), wifiMgr.getIP());
         } else {
             refreshDisplay();
         }

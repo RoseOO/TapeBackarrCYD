@@ -32,7 +32,8 @@ enum DisplayScreen {
     SCREEN_DASHBOARD,
     SCREEN_JOBS,
     SCREEN_DRIVES,
-    SCREEN_ALERT
+    SCREEN_ALERT,
+    SCREEN_LTFS_FORMAT
 };
 
 class Display {
@@ -47,7 +48,8 @@ public:
     void showActiveJobs(const std::vector<ActiveJobData>& jobs);
     void showDrives(const std::vector<DriveData>& drives);
     void showTapeAlert(const String& message);
-    void showError(const String& error);
+    void showLTFSFormat(const LTFSFormatStatus& status);
+    void showError(const String& error, const String& deviceIP = "");
 
     void drawStatusBar(bool wifiConnected, bool apiConnected,
                        const String& ip);

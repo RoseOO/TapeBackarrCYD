@@ -33,8 +33,11 @@ struct ActiveJobData {
 struct DriveData {
     int id;
     String displayName;
+    String vendor;
+    String model;
     String status;        // ready, busy, offline, error
     String currentTape;
+    String formatType;    // raw, ltfs
     String devicePath;
     bool enabled;
     bool valid;
@@ -49,6 +52,17 @@ struct TapeChangeData {
     bool valid;
 };
 
+// LTFS format progress from /api/v1/ltfs/format/status
+struct LTFSFormatStatus {
+    bool active;
+    String phase;        // formatting, verifying, mounting, labeling, finalizing
+    String devicePath;
+    int progressPct;
+    unsigned long elapsedSec;
+    String error;
+    bool valid;
+};
+
 class APIClient {
 public:
     void begin(SettingsManager& settings);
@@ -58,6 +72,7 @@ public:
     std::vector<ActiveJobData> fetchActiveJobs();
     std::vector<DriveData> fetchDrives();
     std::vector<TapeChangeData> fetchTapeChanges();
+    LTFSFormatStatus fetchLTFSFormatStatus();
 
     bool isConnected() const { return _connected; }
     String getLastError() const { return _lastError; }

@@ -230,10 +230,13 @@ void Display::showDrives(const std::vector<DriveData>& drives) {
         _tft.setTextColor(COLOR_TEXT, COLOR_CARD_BG);
         _tft.drawString(drive.displayName.substring(0, 22), 28, y + 5, 2);
 
-        // Tape info
+        // Tape info and format type
         _tft.setTextColor(COLOR_TEXT_DIM, COLOR_CARD_BG);
         String tape = "Tape: " + drive.currentTape;
-        _tft.drawString(tape.substring(0, 35), 28, y + 27, 1);
+        if (drive.formatType.length() > 0) {
+            tape += " [" + drive.formatType + "]";
+        }
+        _tft.drawString(tape.substring(0, 40), 28, y + 27, 1);
 
         // Status badge
         _tft.setTextColor(statusColor, COLOR_CARD_BG);
@@ -268,17 +271,78 @@ void Display::showTapeAlert(const String& message) {
     _lastAlertBlink = millis();
 }
 
-void Display::showError(const String& error) {
+void Display::showLTFSFormat(const LTFSFormatStatus& status) {
+    _currentScreen = SCREEN_LTFS_FORMAT;
+    _tft.fillScreen(COLOR_BG);
+
+    drawStatusBar(true, true, "");
+
+    int y = CONTENT_Y + 5;
+
+    _tft.setTextColor(COLOR_ACCENT, COLOR_BG);
+    _tft.setTextDatum(MC_DATUM);
+    _tft.drawString("LTFS Formatting", SCREEN_W / 2, y + 10, 4);
+    y += 40;
+
+    // Phase
+    _tft.setTextColor(COLOR_TEXT, COLOR_BG);
+    String phase = status.phase;
+    if (phase.length() > 0) {
+        phase[0] = toupper(phase[0]);
+    }
+    _tft.drawString(phase.length() > 0 ? phase : "Starting...",
+                     SCREEN_W / 2, y + 10, 2);
+    y += 30;
+
+    // Progress bar
+    float pct = (float)status.progressPct / 100.0f;
+    drawProgressBar(20, y, SCREEN_W - 40, 16, pct, COLOR_ACCENT);
+    y += 24;
+
+    // Percentage
+    _tft.setTextColor(COLOR_TEXT, COLOR_BG);
+    _tft.drawString(String(status.progressPct) + "%", SCREEN_W / 2, y + 5, 4);
+    y += 35;
+
+    // Elapsed time
+    _tft.setTextColor(COLOR_TEXT_DIM, COLOR_BG);
+    _tft.drawString("Elapsed: " + formatDuration(status.elapsedSec),
+                     SCREEN_W / 2, y + 5, 2);
+    y += 20;
+
+    // Device
+    if (status.devicePath.length() > 0) {
+        _tft.drawString(status.devicePath, SCREEN_W / 2, y + 5, 1);
+    }
+
+    // Error display
+    if (status.error.length() > 0) {
+        y += 20;
+        _tft.setTextColor(COLOR_ERROR, COLOR_BG);
+        _tft.drawString(status.error.substring(0, 35), SCREEN_W / 2, y + 5, 1);
+    }
+
+    _tft.setTextDatum(TL_DATUM);
+    setLED(false, false, true);  // Blue LED during format
+}
+
+void Display::showError(const String& error, const String& deviceIP) {
     _tft.fillRect(0, CONTENT_Y, SCREEN_W, CONTENT_H, COLOR_BG);
 
     _tft.setTextColor(COLOR_ERROR, COLOR_BG);
     _tft.setTextDatum(MC_DATUM);
     _tft.drawString("Connection Error", SCREEN_W / 2,
-                     CONTENT_Y + CONTENT_H / 2 - 20, 4);
+                     CONTENT_Y + CONTENT_H / 2 - 30, 4);
 
     _tft.setTextColor(COLOR_TEXT_DIM, COLOR_BG);
     _tft.drawString(error.substring(0, 35), SCREEN_W / 2,
-                     CONTENT_Y + CONTENT_H / 2 + 15, 2);
+                     CONTENT_Y + CONTENT_H / 2 + 5, 2);
+
+    if (deviceIP.length() > 0) {
+        _tft.setTextColor(COLOR_ACCENT, COLOR_BG);
+        _tft.drawString("IP: " + deviceIP, SCREEN_W / 2,
+                         CONTENT_Y + CONTENT_H / 2 + 30, 2);
+    }
     _tft.setTextDatum(TL_DATUM);
 
     setLED(true, false, false);  // Red LED on error
