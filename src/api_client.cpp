@@ -60,13 +60,24 @@ DashboardData APIClient::fetchDashboard() {
 
     data.totalTapes        = doc["total_tapes"] | 0;
     data.activeTapes       = doc["active_tapes"] | 0;
-    data.fullTapes         = doc["full_tapes"] | 0;
+    data.fullTapes         = 0;  // Not provided by API
     data.totalJobs         = doc["total_jobs"] | 0;
-    data.activeJobs        = doc["active_jobs"] | 0;
-    data.totalDrives       = doc["total_drives"] | 0;
-    data.totalCapacityBytes = doc["total_capacity_bytes"] | (int64_t)0;
-    data.usedCapacityBytes  = doc["used_capacity_bytes"] | (int64_t)0;
+    data.activeJobs        = doc["running_jobs"] | 0;
+    data.totalDrives       = doc["drive_status"].is<const char*>() ? 1 : 0;
+
+    // Sum capacity across all pools
+    data.totalCapacityBytes = 0;
+    data.usedCapacityBytes  = 0;
+    JsonArray pools = doc["pool_storage"].as<JsonArray>();
+    for (JsonObject pool : pools) {
+        data.totalCapacityBytes += pool["total_capacity_bytes"] | (int64_t)0;
+        data.usedCapacityBytes  += pool["total_used_bytes"] | (int64_t)0;
+    }
     data.valid = true;
+
+    Serial.printf("Dashboard: tapes=%d jobs=%d cap=%lld/%lld\n",
+                  data.totalTapes, data.totalJobs,
+                  data.usedCapacityBytes, data.totalCapacityBytes);
 
     return data;
 }

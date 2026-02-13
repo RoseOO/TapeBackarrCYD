@@ -51,7 +51,7 @@ public:
       cfg.y_max      = 3700;
       cfg.pin_int    = 36;
       cfg.bus_shared = false;
-      cfg.offset_rotation = 1;
+      cfg.offset_rotation = 0;
 
       cfg.spi_host = HSPI_HOST;
       cfg.freq     = 2500000;
