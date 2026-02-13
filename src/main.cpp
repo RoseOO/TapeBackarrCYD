@@ -73,8 +73,7 @@ void fetchAllData() {
 
 void refreshDisplay() {
     if (hasAlert) {
-        String reason = tapeChanges.empty() ? "Tape change needed" : tapeChanges[0].reason;
-        display.showTapeAlert(reason);
+        display.showTapeAlert(tapeChanges[0].reason);
         return;
     }
 

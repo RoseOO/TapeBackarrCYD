@@ -233,10 +233,15 @@ void Display::showDrives(const std::vector<DriveData>& drives) {
         // Tape info and format type
         _tft.setTextColor(COLOR_TEXT_DIM, COLOR_CARD_BG);
         String tape = "Tape: " + drive.currentTape;
+        String suffix = "";
         if (drive.formatType.length() > 0) {
-            tape += " [" + drive.formatType + "]";
+            suffix = " [" + drive.formatType + "]";
         }
-        _tft.drawString(tape.substring(0, 40), 28, y + 27, 1);
+        int maxTapeLen = 40 - suffix.length();
+        if ((int)tape.length() > maxTapeLen) {
+            tape = tape.substring(0, maxTapeLen);
+        }
+        _tft.drawString(tape + suffix, 28, y + 27, 1);
 
         // Status badge
         _tft.setTextColor(statusColor, COLOR_CARD_BG);
