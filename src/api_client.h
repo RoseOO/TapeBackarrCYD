@@ -22,10 +22,22 @@ struct DashboardData {
 struct ActiveJobData {
     int id;
     String name;
-    String status;         // running, paused, pending
-    int64_t filesProcessed;
-    int64_t bytesProcessed;
+    String phase;          // initializing, scanning, streaming, cataloging, completed, failed, cancelled
+    String status;         // running, paused, cancelled
+    int64_t fileCount;
+    int64_t totalFiles;
+    int64_t totalBytes;
+    int64_t bytesWritten;
+    double writeSpeed;     // bytes per second
+    String tapeLabel;
+    int64_t tapeCapacityBytes;
+    int64_t tapeUsedBytes;
+    double estimatedSecondsRemaining;
     String startTime;
+    // Scan progress fields
+    int64_t scanFilesFound;
+    int64_t scanDirsScanned;
+    int64_t scanBytesFound;
     bool valid;
 };
 
