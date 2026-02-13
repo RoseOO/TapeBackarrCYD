@@ -178,29 +178,74 @@ void Display::showActiveJobs(const std::vector<ActiveJobData>& jobs) {
         const auto& job = jobs[i];
 
         // Job card
-        _tft.fillRoundRect(5, y, SCREEN_W - 10, 48, 4, COLOR_CARD_BG);
+        _tft.fillRoundRect(5, y, SCREEN_W - 10, 52, 4, COLOR_CARD_BG);
 
-        // Status indicator
+        // Status indicator color
         uint16_t statusColor = COLOR_TEXT_DIM;
         if (job.status == "running") statusColor = COLOR_SUCCESS;
         else if (job.status == "paused") statusColor = COLOR_WARNING;
-        _tft.fillCircle(15, y + 15, 5, statusColor);
+        _tft.fillCircle(15, y + 11, 5, statusColor);
 
         // Job name
         _tft.setTextColor(COLOR_TEXT, COLOR_CARD_BG);
-        _tft.drawString(job.name.substring(0, 25), 28, y + 5, 2);
+        _tft.drawString(job.name.substring(0, 22), 28, y + 4, 2);
 
-        // Stats
+        // Phase badge (top-right)
+        String phase = job.phase;
+        if (phase.length() == 0) phase = job.status;
+        uint16_t phaseColor = COLOR_TEXT_DIM;
+        if (phase == "scanning") phaseColor = COLOR_WARNING;
+        else if (phase == "streaming") phaseColor = COLOR_SUCCESS;
+        else if (phase == "cataloging") phaseColor = COLOR_ACCENT;
+        else if (phase == "initializing") phaseColor = COLOR_TEXT_DIM;
+        else if (phase == "completed") phaseColor = COLOR_SUCCESS;
+        else if (phase == "failed") phaseColor = COLOR_ERROR;
+        _tft.setTextColor(phaseColor, COLOR_CARD_BG);
+        _tft.drawString(phase, SCREEN_W - 80, y + 4, 2);
+
+        // Phase-specific stats (second row)
         _tft.setTextColor(COLOR_TEXT_DIM, COLOR_CARD_BG);
-        String stats = String(job.filesProcessed) + " files | " +
-                       formatBytes(job.bytesProcessed);
-        _tft.drawString(stats, 28, y + 27, 1);
+        String stats;
+        if (phase == "scanning") {
+            stats = String((long)job.scanFilesFound) + " files " +
+                    String((long)job.scanDirsScanned) + " dirs " +
+                    formatBytes(job.scanBytesFound);
+        } else if (phase == "streaming") {
+            stats = formatBytes(job.bytesWritten) + "/" +
+                    formatBytes(job.totalBytes);
+            if (job.writeSpeed > 0) {
+                stats += " " + formatBytes((int64_t)job.writeSpeed) + "/s";
+            }
+            if (job.estimatedSecondsRemaining > 0) {
+                stats += " ETA:" + formatDuration((unsigned long)job.estimatedSecondsRemaining);
+            }
+        } else if (phase == "cataloging") {
+            stats = String((long)job.fileCount) + "/" +
+                    String((long)job.totalFiles) + " files";
+        } else {
+            stats = String((long)job.fileCount) + " files | " +
+                    formatBytes(job.bytesWritten);
+        }
+        _tft.drawString(stats.substring(0, 45), 28, y + 22, 1);
 
-        // Status badge
-        _tft.setTextColor(statusColor, COLOR_CARD_BG);
-        _tft.drawString(job.status, SCREEN_W - 70, y + 5, 2);
+        // Progress bar (bottom of card)
+        float pct = 0;
+        if (phase == "streaming" && job.totalBytes > 0) {
+            pct = (float)job.bytesWritten / (float)job.totalBytes;
+        } else if (phase == "cataloging" && job.totalFiles > 0) {
+            pct = (float)job.fileCount / (float)job.totalFiles;
+        }
+        drawProgressBar(28, y + 38, SCREEN_W - 70, 8, pct,
+                         phase == "streaming" ? COLOR_SUCCESS : COLOR_ACCENT);
 
-        y += 55;
+        // Progress percentage text
+        if (pct > 0) {
+            _tft.setTextColor(COLOR_TEXT_DIM, COLOR_CARD_BG);
+            _tft.drawString(String((int)(pct * 100)) + "%",
+                             SCREEN_W - 35, y + 36, 1);
+        }
+
+        y += 57;
     }
 }
 

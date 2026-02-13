@@ -95,12 +95,23 @@ std::vector<ActiveJobData> APIClient::fetchActiveJobs() {
     JsonArray arr = doc.as<JsonArray>();
     for (JsonObject obj : arr) {
         ActiveJobData job;
-        job.id             = obj["id"] | 0;
-        job.name           = obj["name"] | "Unknown";
+        job.id             = obj["job_id"] | 0;
+        job.name           = obj["job_name"] | "Unknown";
+        job.phase          = obj["phase"] | "";
         job.status         = obj["status"] | "unknown";
-        job.filesProcessed = obj["files_processed"] | (int64_t)0;
-        job.bytesProcessed = obj["bytes_processed"] | (int64_t)0;
+        job.fileCount      = obj["file_count"] | (int64_t)0;
+        job.totalFiles     = obj["total_files"] | (int64_t)0;
+        job.totalBytes     = obj["total_bytes"] | (int64_t)0;
+        job.bytesWritten   = obj["bytes_written"] | (int64_t)0;
+        job.writeSpeed     = obj["write_speed"] | 0.0;
+        job.tapeLabel      = obj["tape_label"] | "";
+        job.tapeCapacityBytes = obj["tape_capacity_bytes"] | (int64_t)0;
+        job.tapeUsedBytes  = obj["tape_used_bytes"] | (int64_t)0;
+        job.estimatedSecondsRemaining = obj["estimated_seconds_remaining"] | 0.0;
         job.startTime      = obj["start_time"] | "";
+        job.scanFilesFound = obj["scan_files_found"] | (int64_t)0;
+        job.scanDirsScanned = obj["scan_dirs_scanned"] | (int64_t)0;
+        job.scanBytesFound = obj["scan_bytes_found"] | (int64_t)0;
         job.valid = true;
         jobs.push_back(job);
     }
