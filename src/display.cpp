@@ -252,8 +252,8 @@ void Display::showDrives(const std::vector<DriveData>& drives) {
         if (drive.formatType.length() > 0) {
             suffix = " [" + drive.formatType + "]";
         }
-        int maxTapeLen = 40 - suffix.length();
-        if ((int)tape.length() > maxTapeLen) {
+        int maxTapeLen = 40 - (int)suffix.length();
+        if (maxTapeLen > 0 && tape.length() > (size_t)maxTapeLen) {
             tape = tape.substring(0, maxTapeLen);
         }
         _tft.drawString(tape + suffix, 28, y + 27, 1);
