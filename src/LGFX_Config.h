@@ -37,7 +37,7 @@ public:
       cfg.invert = false;
       cfg.rgb_order = false;   // false = BGR for CYD2USB
       cfg.dlen_16bit = false;
-      cfg.bus_shared = true;
+      cfg.bus_shared = false;  // Display(VSPI) and Touch(HSPI) are separate buses
       cfg.pin_cs   = 15;
       cfg.pin_rst  = -1;
       cfg.pin_busy = -1;
@@ -51,7 +51,7 @@ public:
       cfg.y_max      = 3700;
       cfg.pin_int    = 36;
       cfg.bus_shared = false;
-      cfg.offset_rotation = 0;
+      cfg.offset_rotation = 2;
 
       cfg.spi_host = HSPI_HOST;
       cfg.freq     = 2500000;

@@ -178,7 +178,6 @@ void ConfigWebServer::begin(SettingsManager& settings, WiFiManager& wifi,
 
     // Redirect all unknown URLs to root (captive-portal support)
     _server.onNotFound([this]() {
-        Serial.printf("404 redirect: %s\n", _server.uri().c_str());
         _server.sendHeader("Location", "/", true);
         _server.send(302, "text/plain", "");
     });
@@ -196,7 +195,6 @@ void ConfigWebServer::handleClient() {
 }
 
 void ConfigWebServer::handleRoot() {
-    Serial.println("handleRoot: request received");
     auto& s = _settings->get();
 
     // Build the full page in a String to avoid chunked transfer issues
@@ -258,7 +256,6 @@ void ConfigWebServer::handleRoot() {
     // Tail
     html += FPSTR(PAGE_TAIL);
 
-    Serial.printf("handleRoot: sending %d bytes\n", html.length());
     _server.send(200, "text/html", html);
 }
 

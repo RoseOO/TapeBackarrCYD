@@ -455,9 +455,8 @@ void Display::setBrightness(uint8_t pct) {
 bool Display::readTouch(uint16_t& x, uint16_t& y) {
     lgfx::touch_point_t tp;
     if (_tft.getTouch(&tp, 1) > 0) {
-        x = tp.x;
-        y = _tft.height() - 1 - tp.y;  // Flip Y — digitizer is inverted
-        Serial.printf("Touch: x=%d y=%d (TAB_BAR_Y=%d)\n", x, y, TAB_BAR_Y);
+        x = _tft.width() - 1 - tp.x;  // Flip X — digitizer is mirrored
+        y = tp.y;
         return true;
     }
     return false;

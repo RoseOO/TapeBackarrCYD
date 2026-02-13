@@ -59,14 +59,15 @@ void fetchAllData() {
     if (!wifiMgr.isConnected() || !settings.isConfigured()) return;
 
     dashboardData = apiClient.fetchDashboard();
-    webServer.handleClient();
+    yield(); webServer.handleClient();
     activeJobs    = apiClient.fetchActiveJobs();
-    webServer.handleClient();
+    yield(); webServer.handleClient();
     drives        = apiClient.fetchDrives();
-    webServer.handleClient();
+    yield(); webServer.handleClient();
     tapeChanges   = apiClient.fetchTapeChanges();
-    webServer.handleClient();
+    yield(); webServer.handleClient();
     ltfsFormatStatus = apiClient.fetchLTFSFormatStatus();
+    yield(); webServer.handleClient();
 
     // Alert persists as long as server reports pending tape changes.
     // If server clears the event (tape was changed), reset everything.

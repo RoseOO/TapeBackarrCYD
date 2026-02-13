@@ -75,10 +75,6 @@ DashboardData APIClient::fetchDashboard() {
     }
     data.valid = true;
 
-    Serial.printf("Dashboard: tapes=%d jobs=%d cap=%lld/%lld\n",
-                  data.totalTapes, data.totalJobs,
-                  data.usedCapacityBytes, data.totalCapacityBytes);
-
     return data;
 }
 
