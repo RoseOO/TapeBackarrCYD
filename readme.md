@@ -15,12 +15,13 @@ A compact monitoring display that sits on top of your tape drive, showing real-t
 ### Display Screens
 - **Dashboard** — Total tapes, active/full counts, job stats, storage usage bar
 - **Active Jobs** — Running backup jobs with file count and bytes processed
-- **Drives** — Drive status, loaded tape info, online/offline/error indicators
+- **Drives** — Drive status, loaded tape info, format type (raw/LTFS), online/offline/error indicators
+- **LTFS Format** — Real-time LTFS format progress with phase, percentage, and elapsed time
 - **Tape Alert** — Full-screen alert with flashing red LED when a tape change is needed
 
 ### Touch Navigation
 - Tap bottom tab bar to switch between Dashboard, Jobs, and Drives screens
-- Tap anywhere to dismiss tape change alerts
+- Tap to temporarily dismiss tape change alerts (alert re-appears on next poll if the tape has not been changed)
 
 ### Web Configuration
 - WiFi network scanning and selection
@@ -36,8 +37,9 @@ A compact monitoring display that sits on top of your tape drive, showing real-t
 
 ### LED Indicators
 - 🟢 Green — Connected and operating normally
-- 🔵 Blue — AP setup mode active
+- 🔵 Blue — AP setup mode active / LTFS format in progress
 - 🔴 Red (blinking) — Tape change alert
+- 🔴 Red (solid) — Connection error (CYD IP shown on display)
 
 ## Getting Started
 
@@ -91,6 +93,7 @@ Generate an API key in the TapeBackarr web interface:
 | `GET /api/v1/jobs/active` | Active job list |
 | `GET /api/v1/drives` | Drive status and tape info |
 | `GET /api/v1/events` | Tape change notifications |
+| `GET /api/v1/ltfs/format/status` | LTFS format progress |
 
 All requests include the `X-API-Key` header for authentication.
 

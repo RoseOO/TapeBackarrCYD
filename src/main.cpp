@@ -7,11 +7,13 @@
  * Features:
  *   - Real-time dashboard with tape/job/drive statistics
  *   - Active job monitoring with progress
- *   - Drive status display with loaded tape info
+ *   - Drive status display with loaded tape info and format type
+ *   - LTFS format progress monitoring
  *   - Tape change alerts with LED notification
  *   - Touch-based screen navigation
  *   - Web-based configuration interface
  *   - WiFi AP fallback for initial setup
+ *   - CYD IP address shown on connection error screens
  *
  * Hardware: ESP32-2432S028 (CYD2USB variant with USB-C)
  *           2.8" 320x240 ILI9341 TFT + XPT2046 touch
@@ -27,7 +29,7 @@
 #include "display.h"
 #include "web_server.h"
 
-#define FW_VERSION "1.0.0"
+#define FW_VERSION "1.1.0"
 
 // Global instances
 SettingsManager settings;
@@ -41,6 +43,7 @@ unsigned long lastPoll       = 0;
 unsigned long lastTouchTime  = 0;
 int           currentTab     = 0;
 bool          hasAlert       = false;
+bool          alertDismissed = false;  // Locally dismissed, re-shows if server still pending
 bool          initialBoot    = true;
 
 // Cached data
@@ -48,6 +51,7 @@ DashboardData              dashboardData = {};
 std::vector<ActiveJobData> activeJobs;
 std::vector<DriveData>     drives;
 std::vector<TapeChangeData> tapeChanges;
+LTFSFormatStatus           ltfsFormatStatus = {};
 
 #define TOUCH_DEBOUNCE 300  // ms
 
@@ -61,15 +65,29 @@ void fetchAllData() {
     drives        = apiClient.fetchDrives();
     webServer.handleClient();
     tapeChanges   = apiClient.fetchTapeChanges();
+    webServer.handleClient();
+    ltfsFormatStatus = apiClient.fetchLTFSFormatStatus();
 
-    // Check for tape change alerts
-    hasAlert = !tapeChanges.empty();
+    // Alert persists as long as server reports pending tape changes.
+    // If server clears the event (tape was changed), reset everything.
+    if (tapeChanges.empty()) {
+        hasAlert = false;
+        alertDismissed = false;
+    } else {
+        hasAlert = true;
+    }
 }
 
 void refreshDisplay() {
-    if (hasAlert) {
-        String reason = tapeChanges.empty() ? "Tape change needed" : tapeChanges[0].reason;
-        display.showTapeAlert(reason);
+    // Show alert if there are pending tape changes and not locally dismissed
+    if (hasAlert && !alertDismissed) {
+        display.showTapeAlert(tapeChanges[0].reason);
+        return;
+    }
+
+    // Show LTFS format progress if a format operation is active
+    if (ltfsFormatStatus.valid && ltfsFormatStatus.active) {
+        display.showLTFSFormat(ltfsFormatStatus);
         return;
     }
 
@@ -87,19 +105,17 @@ void refreshDisplay() {
 }
 
 void handleTouch() {
-    if (!display.isTouched()) return;
+    uint16_t tx = 0, ty = 0;
+    if (!display.readTouch(tx, ty)) return;
 
     unsigned long now = millis();
     if (now - lastTouchTime < TOUCH_DEBOUNCE) return;
     lastTouchTime = now;
 
-    uint16_t tx, ty;
-    display.getTouchPoint(tx, ty);
-
-    // If alert showing, dismiss it
-    if (hasAlert) {
-        hasAlert = false;
-        tapeChanges.clear();
+    // If alert showing, temporarily dismiss it (will re-appear on next
+    // poll if the server still reports pending tape change events)
+    if (display.getCurrentScreen() == SCREEN_ALERT) {
+        alertDismissed = true;
         refreshDisplay();
         return;
     }
@@ -183,7 +199,7 @@ void loop() {
             fetchAllData();
             refreshDisplay();
         } else {
-            display.showError("Not configured - open web UI");
+            display.showError("Not configured - open web UI", wifiMgr.getIP());
         }
     }
 
@@ -195,7 +211,7 @@ void loop() {
         fetchAllData();
 
         if (!apiClient.isConnected()) {
-            display.showError(apiClient.getLastError());
+            display.showError(apiClient.getLastError(), wifiMgr.getIP());
         } else {
             refreshDisplay();
         }

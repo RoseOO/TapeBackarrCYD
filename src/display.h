@@ -32,7 +32,8 @@ enum DisplayScreen {
     SCREEN_DASHBOARD,
     SCREEN_JOBS,
     SCREEN_DRIVES,
-    SCREEN_ALERT
+    SCREEN_ALERT,
+    SCREEN_LTFS_FORMAT
 };
 
 class Display {
@@ -47,17 +48,18 @@ public:
     void showActiveJobs(const std::vector<ActiveJobData>& jobs);
     void showDrives(const std::vector<DriveData>& drives);
     void showTapeAlert(const String& message);
-    void showError(const String& error);
+    void showLTFSFormat(const LTFSFormatStatus& status);
+    void showError(const String& error, const String& deviceIP = "");
 
     void drawStatusBar(bool wifiConnected, bool apiConnected,
                        const String& ip);
     void drawTabBar(int activeTab);
+    void clearContent();
 
     void setBrightness(uint8_t pct);
 
     // Touch handling
-    bool isTouched();
-    void getTouchPoint(uint16_t& x, uint16_t& y);
+    bool readTouch(uint16_t& x, uint16_t& y);
     int getTabFromTouch(uint16_t x, uint16_t y);
 
     DisplayScreen getCurrentScreen() const { return _currentScreen; }

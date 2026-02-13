@@ -120,8 +120,11 @@ std::vector<DriveData> APIClient::fetchDrives() {
         DriveData drive;
         drive.id          = obj["id"] | 0;
         drive.displayName = obj["display_name"] | "Unknown";
+        drive.vendor      = obj["vendor"] | "";
+        drive.model       = obj["model"] | "";
         drive.status      = obj["status"] | "unknown";
         drive.currentTape = obj["current_tape"] | "None";
+        drive.formatType  = obj["format_type"] | "";
         drive.devicePath  = obj["device_path"] | "";
         drive.enabled     = obj["enabled"] | false;
         drive.valid = true;
@@ -158,4 +161,30 @@ std::vector<TapeChangeData> APIClient::fetchTapeChanges() {
     }
 
     return changes;
+}
+
+LTFSFormatStatus APIClient::fetchLTFSFormatStatus() {
+    LTFSFormatStatus status = {};
+    status.valid = false;
+
+    String url = buildURL("/api/v1/ltfs/format/status");
+    String resp = httpGet(url);
+    if (resp.isEmpty()) return status;
+
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, resp);
+    if (err) {
+        _lastError = "JSON: " + String(err.c_str());
+        return status;
+    }
+
+    status.active     = doc["active"] | false;
+    status.phase      = doc["phase"] | "";
+    status.devicePath = doc["device_path"] | "";
+    status.progressPct = doc["progress_pct"] | 0;
+    status.elapsedSec  = doc["elapsed_seconds"] | (unsigned long)0;
+    status.error       = doc["error"] | "";
+    status.valid = true;
+
+    return status;
 }
