@@ -103,11 +103,16 @@ void Display::showConnecting(const String& ssid) {
 }
 
 void Display::showDashboard(const DashboardData& data) {
+    bool screenChanged = (_currentScreen != SCREEN_DASHBOARD);
     _currentScreen = SCREEN_DASHBOARD;
-    _tft.fillScreen(COLOR_BG);
+
+    if (screenChanged) {
+        _tft.fillScreen(COLOR_BG);
+        drawTabBar(0);
+    }
 
     drawStatusBar(true, data.valid, "");
-    drawTabBar(0);
+    clearContent();
 
     int y = CONTENT_Y + 5;
 
@@ -145,11 +150,16 @@ void Display::showDashboard(const DashboardData& data) {
 }
 
 void Display::showActiveJobs(const std::vector<ActiveJobData>& jobs) {
+    bool screenChanged = (_currentScreen != SCREEN_JOBS);
     _currentScreen = SCREEN_JOBS;
-    _tft.fillScreen(COLOR_BG);
+
+    if (screenChanged) {
+        _tft.fillScreen(COLOR_BG);
+        drawTabBar(1);
+    }
 
     drawStatusBar(true, true, "");
-    drawTabBar(1);
+    clearContent();
 
     int y = CONTENT_Y + 5;
     _tft.setTextColor(COLOR_TEXT, COLOR_BG);
@@ -195,11 +205,16 @@ void Display::showActiveJobs(const std::vector<ActiveJobData>& jobs) {
 }
 
 void Display::showDrives(const std::vector<DriveData>& drives) {
+    bool screenChanged = (_currentScreen != SCREEN_DRIVES);
     _currentScreen = SCREEN_DRIVES;
-    _tft.fillScreen(COLOR_BG);
+
+    if (screenChanged) {
+        _tft.fillScreen(COLOR_BG);
+        drawTabBar(2);
+    }
 
     drawStatusBar(true, true, "");
-    drawTabBar(2);
+    clearContent();
 
     int y = CONTENT_Y + 5;
     _tft.setTextColor(COLOR_TEXT, COLOR_BG);
@@ -252,6 +267,7 @@ void Display::showDrives(const std::vector<DriveData>& drives) {
 }
 
 void Display::showTapeAlert(const String& message) {
+    if (_currentScreen == SCREEN_ALERT) return;  // Avoid redraw flicker
     _currentScreen = SCREEN_ALERT;
     _tft.fillScreen(COLOR_BG);
 
@@ -277,10 +293,15 @@ void Display::showTapeAlert(const String& message) {
 }
 
 void Display::showLTFSFormat(const LTFSFormatStatus& status) {
+    bool screenChanged = (_currentScreen != SCREEN_LTFS_FORMAT);
     _currentScreen = SCREEN_LTFS_FORMAT;
-    _tft.fillScreen(COLOR_BG);
+
+    if (screenChanged) {
+        _tft.fillScreen(COLOR_BG);
+    }
 
     drawStatusBar(true, true, "");
+    clearContent();
 
     int y = CONTENT_Y + 5;
 
@@ -397,6 +418,10 @@ void Display::drawTabBar(int activeTab) {
     }
 }
 
+void Display::clearContent() {
+    _tft.fillRect(0, CONTENT_Y, SCREEN_W, CONTENT_H, COLOR_BG);
+}
+
 void Display::drawCard(int x, int y, int w, int h, const String& label,
                         const String& value, uint16_t valueColor) {
     _tft.fillRoundRect(x, y, w, h, 4, COLOR_CARD_BG);
@@ -427,17 +452,14 @@ void Display::setBrightness(uint8_t pct) {
     analogWrite(TFT_BL, duty);
 }
 
-bool Display::isTouched() {
-    lgfx::touch_point_t tp;
-    return _tft.getTouch(&tp, 1) > 0;
-}
-
-void Display::getTouchPoint(uint16_t& x, uint16_t& y) {
+bool Display::readTouch(uint16_t& x, uint16_t& y) {
     lgfx::touch_point_t tp;
     if (_tft.getTouch(&tp, 1) > 0) {
         x = tp.x;
         y = tp.y;
+        return true;
     }
+    return false;
 }
 
 int Display::getTabFromTouch(uint16_t x, uint16_t y) {

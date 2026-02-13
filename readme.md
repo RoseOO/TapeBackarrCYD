@@ -21,7 +21,7 @@ A compact monitoring display that sits on top of your tape drive, showing real-t
 
 ### Touch Navigation
 - Tap bottom tab bar to switch between Dashboard, Jobs, and Drives screens
-- Tap anywhere to dismiss tape change alerts
+- Tap to temporarily dismiss tape change alerts (alert re-appears on next poll if the tape has not been changed)
 
 ### Web Configuration
 - WiFi network scanning and selection

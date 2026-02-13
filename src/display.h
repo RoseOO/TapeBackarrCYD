@@ -54,12 +54,12 @@ public:
     void drawStatusBar(bool wifiConnected, bool apiConnected,
                        const String& ip);
     void drawTabBar(int activeTab);
+    void clearContent();
 
     void setBrightness(uint8_t pct);
 
     // Touch handling
-    bool isTouched();
-    void getTouchPoint(uint16_t& x, uint16_t& y);
+    bool readTouch(uint16_t& x, uint16_t& y);
     int getTabFromTouch(uint16_t x, uint16_t y);
 
     DisplayScreen getCurrentScreen() const { return _currentScreen; }

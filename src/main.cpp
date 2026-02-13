@@ -43,6 +43,7 @@ unsigned long lastPoll       = 0;
 unsigned long lastTouchTime  = 0;
 int           currentTab     = 0;
 bool          hasAlert       = false;
+bool          alertDismissed = false;  // Locally dismissed, re-shows if server still pending
 bool          initialBoot    = true;
 
 // Cached data
@@ -67,12 +68,19 @@ void fetchAllData() {
     webServer.handleClient();
     ltfsFormatStatus = apiClient.fetchLTFSFormatStatus();
 
-    // Check for tape change alerts
-    hasAlert = !tapeChanges.empty();
+    // Alert persists as long as server reports pending tape changes.
+    // If server clears the event (tape was changed), reset everything.
+    if (tapeChanges.empty()) {
+        hasAlert = false;
+        alertDismissed = false;
+    } else {
+        hasAlert = true;
+    }
 }
 
 void refreshDisplay() {
-    if (hasAlert) {
+    // Show alert if there are pending tape changes and not locally dismissed
+    if (hasAlert && !alertDismissed) {
         display.showTapeAlert(tapeChanges[0].reason);
         return;
     }
@@ -97,19 +105,17 @@ void refreshDisplay() {
 }
 
 void handleTouch() {
-    if (!display.isTouched()) return;
+    uint16_t tx = 0, ty = 0;
+    if (!display.readTouch(tx, ty)) return;
 
     unsigned long now = millis();
     if (now - lastTouchTime < TOUCH_DEBOUNCE) return;
     lastTouchTime = now;
 
-    uint16_t tx, ty;
-    display.getTouchPoint(tx, ty);
-
-    // If alert showing, dismiss it
-    if (hasAlert) {
-        hasAlert = false;
-        tapeChanges.clear();
+    // If alert showing, temporarily dismiss it (will re-appear on next
+    // poll if the server still reports pending tape change events)
+    if (display.getCurrentScreen() == SCREEN_ALERT) {
+        alertDismissed = true;
         refreshDisplay();
         return;
     }
