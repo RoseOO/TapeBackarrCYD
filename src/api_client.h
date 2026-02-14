@@ -33,6 +33,7 @@ struct ActiveJobData {
     int64_t tapeCapacityBytes;
     int64_t tapeUsedBytes;
     double estimatedSecondsRemaining;
+    double tapeEstimatedSecondsRemaining;
     String startTime;
     // Scan progress fields
     int64_t scanFilesFound;

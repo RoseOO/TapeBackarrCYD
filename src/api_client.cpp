@@ -108,6 +108,7 @@ std::vector<ActiveJobData> APIClient::fetchActiveJobs() {
         job.tapeCapacityBytes = obj["tape_capacity_bytes"] | (int64_t)0;
         job.tapeUsedBytes  = obj["tape_used_bytes"] | (int64_t)0;
         job.estimatedSecondsRemaining = obj["estimated_seconds_remaining"] | 0.0;
+        job.tapeEstimatedSecondsRemaining = obj["tape_estimated_seconds_remaining"] | 0.0;
         job.startTime      = obj["start_time"] | "";
         job.scanFilesFound = obj["scan_files_found"] | (int64_t)0;
         job.scanDirsScanned = obj["scan_dirs_scanned"] | (int64_t)0;

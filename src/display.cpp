@@ -174,11 +174,11 @@ void Display::showActiveJobs(const std::vector<ActiveJobData>& jobs) {
         return;
     }
 
-    for (size_t i = 0; i < jobs.size() && i < 3; i++) {
+    for (size_t i = 0; i < jobs.size() && i < 2; i++) {
         const auto& job = jobs[i];
 
-        // Job card
-        _tft.fillRoundRect(5, y, SCREEN_W - 10, 52, 4, COLOR_CARD_BG);
+        // Job card — taller to fit tape stats
+        _tft.fillRoundRect(5, y, SCREEN_W - 10, 80, 4, COLOR_CARD_BG);
 
         // Status indicator color
         uint16_t statusColor = COLOR_TEXT_DIM;
@@ -212,12 +212,11 @@ void Display::showActiveJobs(const std::vector<ActiveJobData>& jobs) {
                     formatBytes(job.scanBytesFound);
         } else if (phase == "streaming") {
             stats = formatBytes(job.bytesWritten) + "/" +
-                    formatBytes(job.totalBytes);
+                    formatBytes(job.totalBytes) + " " +
+                    String((long)job.fileCount) + "/" +
+                    String((long)job.totalFiles) + " files";
             if (job.writeSpeed > 0) {
                 stats += " " + formatBytes((int64_t)job.writeSpeed) + "/s";
-            }
-            if (job.estimatedSecondsRemaining > 0) {
-                stats += " ETA:" + formatDuration((unsigned long)job.estimatedSecondsRemaining);
             }
         } else if (phase == "cataloging") {
             stats = String((long)job.fileCount) + "/" +
@@ -226,26 +225,66 @@ void Display::showActiveJobs(const std::vector<ActiveJobData>& jobs) {
             stats = String((long)job.fileCount) + " files | " +
                     formatBytes(job.bytesWritten);
         }
-        _tft.drawString(stats.substring(0, 45), 28, y + 22, 1);
+        _tft.drawString(stats.substring(0, 50), 28, y + 22, 1);
 
-        // Progress bar (bottom of card)
+        // Job progress bar
         float pct = 0;
         if (phase == "streaming" && job.totalBytes > 0) {
             pct = (float)job.bytesWritten / (float)job.totalBytes;
         } else if (phase == "cataloging" && job.totalFiles > 0) {
             pct = (float)job.fileCount / (float)job.totalFiles;
         }
-        drawProgressBar(28, y + 38, SCREEN_W - 70, 8, pct,
+        drawProgressBar(28, y + 34, SCREEN_W - 70, 6, pct,
                          phase == "streaming" ? COLOR_SUCCESS : COLOR_ACCENT);
-
-        // Progress percentage text
-        if (pct > 0) {
+        {
             _tft.setTextColor(COLOR_TEXT_DIM, COLOR_CARD_BG);
-            _tft.drawString(String((int)(pct * 100)) + "%",
-                             SCREEN_W - 35, y + 36, 1);
+            String pctStr = (pct >= 0.1f) ? String((int)(pct * 100)) + "%"
+                                          : String(pct * 100, 1) + "%";
+            _tft.drawString(pctStr, SCREEN_W - 40, y + 32, 1);
         }
 
-        y += 57;
+        // Tape stats row
+        _tft.setTextColor(COLOR_TEXT_DIM, COLOR_CARD_BG);
+        // Use bytes_written as tape used if tape_used_bytes is 0
+        int64_t tapeUsed = (job.tapeUsedBytes > 0) ? job.tapeUsedBytes : job.bytesWritten;
+        String tapeInfo;
+        if (job.tapeLabel.length() > 0) {
+            tapeInfo = "Tape: " + job.tapeLabel + " " +
+                       formatBytes(tapeUsed) + "/" +
+                       formatBytes(job.tapeCapacityBytes);
+        } else {
+            tapeInfo = "No tape loaded";
+        }
+        _tft.drawString(tapeInfo.substring(0, 50), 28, y + 46, 1);
+
+        // Tape usage progress bar
+        float tapePct = 0;
+        if (job.tapeCapacityBytes > 0) {
+            tapePct = (float)((double)tapeUsed / (double)job.tapeCapacityBytes);
+        }
+        drawProgressBar(28, y + 58, SCREEN_W - 70, 6, tapePct,
+                         tapePct > 0.9f ? COLOR_ERROR :
+                         tapePct > 0.75f ? COLOR_WARNING : COLOR_ACCENT);
+        {
+            _tft.setTextColor(COLOR_TEXT_DIM, COLOR_CARD_BG);
+            String tpPctStr = (tapePct >= 0.1f) ? String((int)(tapePct * 100)) + "%"
+                                                : String(tapePct * 100, 1) + "%";
+            _tft.drawString(tpPctStr, SCREEN_W - 40, y + 56, 1);
+        }
+
+        // ETAs — job overall + tape
+        _tft.setTextColor(COLOR_TEXT_DIM, COLOR_CARD_BG);
+        String etaLine = "Job: ";
+        etaLine += (job.estimatedSecondsRemaining > 0)
+                   ? formatDuration((unsigned long)job.estimatedSecondsRemaining)
+                   : "calc...";
+        etaLine += "  Tape: ";
+        etaLine += (job.tapeEstimatedSecondsRemaining > 0)
+                   ? formatDuration((unsigned long)job.tapeEstimatedSecondsRemaining)
+                   : "calc...";
+        _tft.drawString(etaLine, 28, y + 68, 1);
+
+        y += 85;
     }
 }
 
@@ -485,9 +524,9 @@ void Display::drawProgressBar(int x, int y, int w, int h,
                                float pct, uint16_t color) {
     pct = constrain(pct, 0.0f, 1.0f);
     _tft.fillRoundRect(x, y, w, h, h / 2, COLOR_PROGRESS_BG);
-    if (pct > 0.01f) {
+    if (pct > 0.001f) {
         int filled = (int)(w * pct);
-        if (filled < h) filled = h;  // Minimum for round rect
+        if (filled < h) filled = h;  // Minimum visible width for round rect
         _tft.fillRoundRect(x, y, filled, h, h / 2, color);
     }
 }

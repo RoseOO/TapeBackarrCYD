@@ -22,7 +22,7 @@
 #define COLOR_HEADER_BG   0x0019  // Dark blue header
 #define COLOR_TAB_ACTIVE  0x04FF  // Active tab
 #define COLOR_TAB_INACTIVE 0x2104  // Inactive tab
-#define COLOR_PROGRESS_BG 0x2104  // Progress bar background
+#define COLOR_PROGRESS_BG 0x3186  // Progress bar background (lighter than card)
 #define COLOR_PROGRESS_FG 0x04FF  // Progress bar foreground
 
 enum DisplayScreen {
