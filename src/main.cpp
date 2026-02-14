@@ -58,6 +58,8 @@ LTFSFormatStatus           ltfsFormatStatus = {};
 void fetchAllData() {
     if (!wifiMgr.isConnected() || !settings.isConfigured()) return;
 
+    bool hadJobs = !activeJobs.empty();
+
     dashboardData = apiClient.fetchDashboard();
     yield(); webServer.handleClient();
     activeJobs    = apiClient.fetchActiveJobs();
@@ -68,6 +70,11 @@ void fetchAllData() {
     yield(); webServer.handleClient();
     ltfsFormatStatus = apiClient.fetchLTFSFormatStatus();
     yield(); webServer.handleClient();
+
+    // Auto-switch to Jobs tab when a new job appears
+    if (!hadJobs && !activeJobs.empty()) {
+        currentTab = 1;
+    }
 
     // Alert persists as long as server reports pending tape changes.
     // If server clears the event (tape was changed), reset everything.
